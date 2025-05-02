@@ -12,9 +12,15 @@ const LocationTab = ({ item }: LocationTabProps) => {
       <CardContent className="pt-4">
         <h3 className="font-semibold mb-4">Locatiegegevens</h3>
         <div className="space-y-2">
-          <div><span className="font-medium">Land:</span> {item.location.country}</div>
-          <div><span className="font-medium">Regio:</span> {item.location.region}</div>
-          <div><span className="font-medium">Plaats:</span> {item.location.city}</div>
+          <div>
+            <span className="font-medium">Land:</span> {item.location.country || "Geen resultaat gevonden"}
+          </div>
+          <div>
+            <span className="font-medium">Regio:</span> {item.location.region || "Geen resultaat gevonden"}
+          </div>
+          <div>
+            <span className="font-medium">Plaats:</span> {item.location.city || "Geen resultaat gevonden"}
+          </div>
         </div>
       </CardContent>
     </Card>

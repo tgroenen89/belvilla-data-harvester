@@ -8,17 +8,25 @@ interface PriceTabProps {
 }
 
 const PriceTab = ({ item }: PriceTabProps) => {
+  const hasPrice = item.price.basePrice > 0;
+  
   return (
     <Card>
       <CardContent className="pt-4">
         <h3 className="font-semibold mb-4">Prijsinformatie</h3>
         
-        <div className="mb-4">
-          <div className="text-2xl font-bold">€ {item.price.basePrice}</div>
-          <div className="text-sm text-muted-foreground">{item.price.description}</div>
-        </div>
+        {hasPrice ? (
+          <div className="mb-4">
+            <div className="text-2xl font-bold">€ {item.price.basePrice}</div>
+            <div className="text-sm text-muted-foreground">
+              {item.price.description || "Geen prijsbeschrijving gevonden"}
+            </div>
+          </div>
+        ) : (
+          <div className="mb-4 text-muted-foreground">Geen prijs gevonden</div>
+        )}
         
-        {item.price.additionalCosts && item.price.additionalCosts.length > 0 && (
+        {item.price.additionalCosts && item.price.additionalCosts.length > 0 ? (
           <div className="mb-4">
             <h4 className="text-sm font-medium mb-2">Bijkomende kosten</h4>
             <ul className="space-y-1">
@@ -30,12 +38,22 @@ const PriceTab = ({ item }: PriceTabProps) => {
               ))}
             </ul>
           </div>
+        ) : (
+          <div className="mb-4 text-sm">
+            <h4 className="text-sm font-medium mb-2">Bijkomende kosten</h4>
+            <div className="text-muted-foreground">Geen bijkomende kosten gevonden</div>
+          </div>
         )}
         
-        {item.price.info && (
+        {item.price.info ? (
           <div className="text-sm text-muted-foreground">
             <Separator className="my-2" />
             {item.price.info}
+          </div>
+        ) : (
+          <div className="text-sm text-muted-foreground">
+            <Separator className="my-2" />
+            Geen aanvullende prijsinformatie gevonden
           </div>
         )}
       </CardContent>

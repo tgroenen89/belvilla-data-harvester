@@ -75,7 +75,6 @@ export const scrapeBelvillaData = async (url: string): Promise<BelvillaData | nu
       return getMockData(url); // Fallback to mock data if extraction fails
     }
     
-    // Don't set default values anymore - return the data as is
     return data;
   } catch (error) {
     console.error("Error in scraper:", error);
