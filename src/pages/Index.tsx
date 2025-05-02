@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
@@ -7,10 +7,25 @@ import DataDisplay from "@/components/DataDisplay";
 import UrlInput from "@/components/UrlInput";
 import { scrapeBelvillaData } from "@/utils/scraper";
 import { BelvillaData } from "@/types/belvilla";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { InfoIcon } from "lucide-react";
 
 const Index = () => {
   const [data, setData] = useState<BelvillaData[] | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
+  const [isExtension, setIsExtension] = useState<boolean>(false);
+
+  // Detect if we're running as a Chrome extension
+  useEffect(() => {
+    const checkIfExtension = () => {
+      const isExtensionContext = typeof chrome !== 'undefined' && 
+                                 chrome.runtime && 
+                                 chrome.runtime.id;
+      setIsExtension(!!isExtensionContext);
+    };
+    
+    checkIfExtension();
+  }, []);
 
   const handleExtractData = async (urls: string[]) => {
     if (urls.some(url => !url.includes("belvilla.nl"))) {
@@ -54,6 +69,15 @@ const Index = () => {
             Extraheer accommodatiegegevens van Belvilla.nl
           </p>
         </header>
+
+        {!isExtension && (
+          <Alert className="mb-6 bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-900/50">
+            <InfoIcon className="h-5 w-5 text-yellow-600 dark:text-yellow-500" />
+            <AlertDescription className="text-yellow-800 dark:text-yellow-300">
+              Je gebruikt momenteel de web-versie met mock data. Installeer de Chrome extensie voor echte data-extractie.
+            </AlertDescription>
+          </Alert>
+        )}
 
         <Card className="p-6 shadow-lg bg-white dark:bg-gray-850">
           <UrlInput onExtract={handleExtractData} loading={loading} />
