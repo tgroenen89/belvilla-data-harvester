@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BelvillaData } from "@/types/belvilla";
-import { exportToJson } from "@/utils/dataExport";
+import { exportToJson, exportToCsv } from "@/utils/dataExport";
 import { Download, ChevronDown, ChevronUp } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 
@@ -22,15 +22,46 @@ const DataDisplay = ({ data }: DataDisplayProps) => {
   const handleExportJson = () => {
     exportToJson(data, `belvilla-${data.id}`);
   };
+  
+  const handleExportCsv = () => {
+    // Convert the nested BelvillaData object to a flattened structure for CSV
+    const flattenedData = [{
+      id: data.id,
+      title: data.title,
+      country: data.location.country,
+      region: data.location.region,
+      city: data.location.city,
+      persons: data.capacity.persons,
+      bedrooms: data.capacity.bedrooms,
+      bathrooms: data.capacity.bathrooms,
+      description: data.description,
+      amenities: data.amenities.join(', '),
+      photos: data.photos.join(', '),
+      basePrice: data.price.basePrice,
+      priceDescription: data.price.description,
+      priceInfo: data.price.info,
+      ratingScore: data.rating.score,
+      ratingCount: data.rating.count,
+      rules: data.rules.join(', ')
+    }];
+    
+    exportToCsv(flattenedData, `belvilla-${data.id}`);
+  };
 
   return (
     <div className="mt-8">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold">Geëxtraheerde Data</h2>
-        <Button variant="outline" onClick={handleExportJson}>
-          <Download className="h-4 w-4 mr-2" />
-          Exporteer als JSON
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleExportCsv}>
+            <Download className="h-4 w-4 mr-2" />
+            Exporteer als CSV
+          </Button>
+          <Button variant="outline" onClick={handleExportJson}>
+            <Download className="h-4 w-4 mr-2" />
+            Exporteer als JSON
+          </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="overview" className="mt-4">
