@@ -1,4 +1,3 @@
-
 import { BelvillaData } from "@/types/belvilla";
 
 /**
@@ -7,7 +6,7 @@ import { BelvillaData } from "@/types/belvilla";
 export const scrapeBelvillaData = async (url: string): Promise<BelvillaData | null> => {
   try {
     // Check if this is a valid Belvilla URL
-    if (!url.includes("belvilla.nl")) {
+    if (!url.includes("belvilla")) {
       console.error("Invalid URL: Not a Belvilla URL");
       return null;
     }
@@ -15,8 +14,7 @@ export const scrapeBelvillaData = async (url: string): Promise<BelvillaData | nu
     console.log("Attempting to fetch data from:", url);
     
     // Due to CORS restrictions in browsers, we need to use a proxy
-    // We'll use a public CORS proxy service (not recommended for production)
-    const proxyUrl = "https://corsproxy.io/?";
+    const proxyUrl = "https://api.allorigins.win/raw?url=";
     
     try {
       const response = await fetch(proxyUrl + encodeURIComponent(url), {
