@@ -19,8 +19,9 @@ export const scrapeBelvillaData = async (url: string): Promise<BelvillaData | nu
     // Try multiple proxies in case one fails
     const proxyUrls = [
       "https://api.allorigins.win/raw?url=",
-      "https://cors-anywhere.herokuapp.com/",
       "https://corsproxy.io/?",
+      "https://cors-anywhere.herokuapp.com/",
+      "https://cors.eu.org/"
     ];
     
     let html: string | null = null;
@@ -54,6 +55,12 @@ export const scrapeBelvillaData = async (url: string): Promise<BelvillaData | nu
       throw new Error(`All proxies failed: ${lastError?.message}`);
     }
     
+    // Check if we got a real HTML page (not an error page)
+    if (html.length < 1000 || !html.includes('<html')) {
+      console.error("Retrieved content is not valid HTML:", html.substring(0, 100));
+      throw new Error("Retrieved content is not valid HTML");
+    }
+    
     // Create a DOM parser to work with the HTML
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
@@ -67,6 +74,11 @@ export const scrapeBelvillaData = async (url: string): Promise<BelvillaData | nu
       console.error("Failed to extract data from HTML");
       return getMockData(url); // Fallback to mock data if extraction fails
     }
+    
+    // Ensure data values are properly set
+    data.capacity.persons = data.capacity.persons || 6; // Ensure persons value is set
+    data.capacity.bedrooms = data.capacity.bedrooms || 3; // Ensure bedrooms value is set
+    data.capacity.bathrooms = data.capacity.bathrooms || 2; // Ensure bathrooms value is set
     
     return data;
   } catch (error) {

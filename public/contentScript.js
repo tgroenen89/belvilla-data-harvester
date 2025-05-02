@@ -13,16 +13,45 @@ function extractBelvillaData() {
     // Extract title
     const title = document.querySelector('h1')?.innerText || "Unknown Title";
     
-    // Extract location data
-    const locationInfo = document.querySelector('.accommodation-header__location, .location-badge')?.innerText || '';
-    const locationParts = locationInfo.split(',').map(part => part.trim());
-    const location = {
-      city: locationParts[0] || "Unknown City",
-      region: locationParts[1] || "Unknown Region",
-      country: locationParts[2] || "Unknown Country"
-    };
+    // Extract location data with improved selectors
+    let location = { city: "Unknown City", region: "Unknown Region", country: "Unknown Country" };
     
-    // Extract capacity information - Improved extraction for all capacity fields
+    const locationSelectors = [
+      '.accommodation-header__location', 
+      '.location-badge',
+      '[data-testid="location"]',
+      '.property-location'
+    ];
+    
+    for (const selector of locationSelectors) {
+      const locationEl = document.querySelector(selector);
+      if (locationEl) {
+        const locationText = locationEl.innerText.trim();
+        const parts = locationText.split(',').map(part => part.trim());
+        
+        if (parts.length >= 1) location.city = parts[0] || "Unknown City";
+        if (parts.length >= 2) location.region = parts[1] || "Unknown Region";
+        if (parts.length >= 3) location.country = parts[2] || "Unknown Country";
+        break;
+      }
+    }
+    
+    // Try to extract location from meta tags if not found
+    if (location.city === "Unknown City") {
+      const metaTags = document.querySelectorAll('meta[property^="og:"]');
+      metaTags.forEach(tag => {
+        const content = tag.getAttribute('content') || '';
+        if (tag.getAttribute('property') === 'og:locality' && content) {
+          location.city = content;
+        } else if (tag.getAttribute('property') === 'og:region' && content) {
+          location.region = content;
+        } else if (tag.getAttribute('property') === 'og:country-name' && content) {
+          location.country = content;
+        }
+      });
+    }
+    
+    // Extract capacity information with multiple approaches
     let persons = 0, bedrooms = 0, bathrooms = 0;
     
     // First try to find capacity info using multiple selectors
@@ -32,7 +61,8 @@ function extractBelvillaData() {
       '.property-feature',
       '[data-testid="persons-count"]',
       '[data-testid="bedrooms-count"]',
-      '[data-testid="bathrooms-count"]'
+      '[data-testid="bathrooms-count"]',
+      '.feature-list__item'
     ];
     
     // Try all selectors
@@ -52,6 +82,38 @@ function extractBelvillaData() {
       });
     }
     
+    // Try to scan all elements with certain classes that might contain capacity info
+    const possibleCapacityContainers = [
+      '.features',
+      '.accommodation-features',
+      '.property-details',
+      '.details-container'
+    ];
+    
+    if (persons === 0 || bedrooms === 0 || bathrooms === 0) {
+      for (const selector of possibleCapacityContainers) {
+        const container = document.querySelector(selector);
+        if (container) {
+          const text = container.innerText.toLowerCase();
+          
+          if (persons === 0) {
+            const personsMatch = text.match(/(\d+)\s*(personen|gasten|persons)/i);
+            if (personsMatch) persons = parseInt(personsMatch[1]) || 0;
+          }
+          
+          if (bedrooms === 0) {
+            const bedroomsMatch = text.match(/(\d+)\s*(slaapkamer|bedroom)/i);
+            if (bedroomsMatch) bedrooms = parseInt(bedroomsMatch[1]) || 0;
+          }
+          
+          if (bathrooms === 0) {
+            const bathroomsMatch = text.match(/(\d+)\s*(badkamer|bathroom)/i);
+            if (bathroomsMatch) bathrooms = parseInt(bathroomsMatch[1]) || 0;
+          }
+        }
+      }
+    }
+    
     // If persons still 0, check meta description
     if (persons === 0) {
       const metaDescription = document.querySelector('meta[name="description"]')?.getAttribute('content') || '';
@@ -61,21 +123,31 @@ function extractBelvillaData() {
       }
     }
     
-    // If bedrooms or bathrooms still 0, scan all elements
-    if (bedrooms === 0 || bathrooms === 0) {
-      const allElements = document.querySelectorAll('*');
-      for (const element of allElements) {
-        const text = element.innerText?.toLowerCase() || '';
-        if (bedrooms === 0 && (text.includes('slaapkamer') || text.includes('bedroom'))) {
-          const match = text.match(/(\d+)/);
-          if (match) bedrooms = parseInt(match[0]);
+    // Check JSON-LD data for capacity information
+    const scripts = document.querySelectorAll('script[type="application/ld+json"]');
+    scripts.forEach(script => {
+      try {
+        const jsonData = JSON.parse(script.textContent || '{}');
+        
+        // Look for Schema.org data
+        if (jsonData.numberOfGuests) {
+          persons = persons || parseInt(jsonData.numberOfGuests);
         }
-        if (bathrooms === 0 && (text.includes('badkamer') || text.includes('bathroom'))) {
-          const match = text.match(/(\d+)/);
-          if (match) bathrooms = parseInt(match[0]);
+        if (jsonData.numberOfRooms) {
+          bedrooms = bedrooms || parseInt(jsonData.numberOfRooms);
         }
+        if (jsonData.numberOfBathrooms) {
+          bathrooms = bathrooms || parseInt(jsonData.numberOfBathrooms);
+        }
+        
+        // Also check nested accommodationCategory
+        if (jsonData.accommodationCategory && jsonData.accommodationCategory.maxOccupancy) {
+          persons = persons || parseInt(jsonData.accommodationCategory.maxOccupancy);
+        }
+      } catch (e) {
+        // Ignore JSON parse errors
       }
-    }
+    });
     
     // Default values if still not found
     persons = persons || 6;
@@ -88,13 +160,15 @@ function extractBelvillaData() {
       '.accommodation-facilities__item', 
       '.facilities__item',
       '.amenities__item',
-      '.feature-list__item'
+      '.feature-list__item',
+      '.features li',
+      '.amenities li'
     ];
     
     for (const selector of amenitySelectors) {
       document.querySelectorAll(selector).forEach(item => {
         const text = item.innerText.trim();
-        if (text) amenities.push(text);
+        if (text && !amenities.includes(text)) amenities.push(text);
       });
       if (amenities.length > 0) break;
     }
@@ -105,7 +179,9 @@ function extractBelvillaData() {
       '.accommodation-description__text',
       '.description__text',
       '[data-testid="description"]',
-      '.property-description'
+      '.property-description',
+      '.description',
+      '.accommodation-description'
     ];
     
     for (const selector of descriptionSelectors) {
@@ -119,6 +195,7 @@ function extractBelvillaData() {
     // If still no description, try to get it from meta tags
     if (!description) {
       description = document.querySelector('meta[name="description"]')?.getAttribute('content') || 
+                   document.querySelector('meta[property="og:description"]')?.getAttribute('content') || 
                    "No description available";
     }
     
@@ -128,17 +205,31 @@ function extractBelvillaData() {
       '.accommodation-photos img', 
       '.gallery img',
       '.property-images img',
-      '[data-testid="property-image"] img'
+      '[data-testid="property-image"] img',
+      '.carousel img',
+      '.gallery__image'
     ];
     
     for (const selector of photoSelectors) {
       document.querySelectorAll(selector).forEach(img => {
-        const src = img.src || img.getAttribute('data-src');
+        const src = img.src || img.getAttribute('data-src') || img.getAttribute('data-lazy-src');
         if (src && !photos.includes(src) && !src.includes('placeholder')) {
           photos.push(src);
         }
       });
-      if (photos.length > 0) break;
+    }
+    
+    // Also try to get photos from data-srcset or srcset attributes
+    if (photos.length === 0) {
+      document.querySelectorAll('img[data-srcset], img[srcset]').forEach(img => {
+        const srcset = img.getAttribute('data-srcset') || img.getAttribute('srcset');
+        if (srcset) {
+          const firstSrc = srcset.split(',')[0].trim().split(' ')[0];
+          if (firstSrc && !photos.includes(firstSrc) && !firstSrc.includes('placeholder')) {
+            photos.push(firstSrc);
+          }
+        }
+      });
     }
     
     // Extract price information with improved selectors
@@ -146,25 +237,46 @@ function extractBelvillaData() {
     const priceSelectors = [
       '.price-box__price',
       '.price__amount',
-      '[data-testid="price"]'
+      '[data-testid="price"]',
+      '.price',
+      '.property-price'
     ];
     
     for (const selector of priceSelectors) {
       const priceElement = document.querySelector(selector);
       if (priceElement) {
-        const priceText = priceElement.innerText.replace(/[^0-9,]/g, '').replace(',', '.');
+        const priceText = priceElement.innerText.replace(/[^0-9,\.]/g, '').replace(',', '.');
         basePrice = parseFloat(priceText) || 0;
         break;
       }
     }
     
-    const priceDescription = document.querySelector('.price-box__description, .price__description')?.innerText || "";
+    // Look for price in JSON-LD data if not found
+    if (basePrice === 0) {
+      scripts.forEach(script => {
+        try {
+          const jsonData = JSON.parse(script.textContent || '{}');
+          if (jsonData.priceRange) {
+            const priceText = jsonData.priceRange.replace(/[^0-9,\.]/g, '').replace(',', '.');
+            basePrice = parseFloat(priceText) || 0;
+          } else if (jsonData.offers && jsonData.offers.price) {
+            basePrice = parseFloat(jsonData.offers.price) || 0;
+          }
+        } catch (e) {
+          // Ignore JSON parse errors
+        }
+      });
+    }
+    
+    const priceDescription = document.querySelector('.price-box__description, .price__description, [data-testid="price-description"]')?.innerText || "";
     
     // Extract additional costs with improved selectors
     const additionalCosts = [];
     const costSelectors = [
       '.price-details__item',
-      '.additional-costs li'
+      '.additional-costs li',
+      '[data-testid="additional-costs"] li',
+      '.extra-costs li'
     ];
     
     for (const selector of costSelectors) {
@@ -178,7 +290,7 @@ function extractBelvillaData() {
       if (additionalCosts.length > 0) break;
     }
     
-    const priceInfoSelectors = ['.price-info', '.additional-info'];
+    const priceInfoSelectors = ['.price-info', '.additional-info', '[data-testid="price-info"]', '.price-notes'];
     let priceInfo = "";
     
     for (const selector of priceInfoSelectors) {
@@ -194,7 +306,9 @@ function extractBelvillaData() {
     const ratingSelectors = [
       '.accommodation-rating__score',
       '.rating__score',
-      '[data-testid="rating-score"]'
+      '[data-testid="rating-score"]',
+      '.rating-score',
+      '.property-rating'
     ];
     
     for (const selector of ratingSelectors) {
@@ -209,7 +323,9 @@ function extractBelvillaData() {
         const countSelectors = [
           '.accommodation-rating__count',
           '.rating__count',
-          '[data-testid="rating-count"]'
+          '[data-testid="rating-count"]',
+          '.rating-count',
+          '.reviews-count'
         ];
         
         for (const countSelector of countSelectors) {
@@ -226,6 +342,21 @@ function extractBelvillaData() {
       }
     }
     
+    // Check JSON-LD for rating info if not found
+    if (score === 0) {
+      scripts.forEach(script => {
+        try {
+          const jsonData = JSON.parse(script.textContent || '{}');
+          if (jsonData.aggregateRating) {
+            score = parseFloat(jsonData.aggregateRating.ratingValue) || 0;
+            count = parseInt(jsonData.aggregateRating.reviewCount) || 0;
+          }
+        } catch (e) {
+          // Ignore JSON parse errors
+        }
+      });
+    }
+    
     // Default rating values if not found
     score = score || 8.5;
     count = count || 20;
@@ -235,7 +366,9 @@ function extractBelvillaData() {
     const ruleSelectors = [
       '.accommodation-rules__item',
       '.house-rules li',
-      '[data-testid="rules"] li'
+      '[data-testid="rules"] li',
+      '.rules li',
+      '.property-rules li'
     ];
     
     for (const selector of ruleSelectors) {
