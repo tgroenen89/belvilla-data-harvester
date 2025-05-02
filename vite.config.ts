@@ -23,22 +23,5 @@ export default defineConfig(({ mode }) => ({
   build: {
     outDir: 'dist',
     emptyOutDir: true,
-    rollupOptions: {
-      input: {
-        main: path.resolve(__dirname, "index.html"),
-        background: path.resolve(__dirname, "public/background.js"),
-        contentScript: path.resolve(__dirname, "public/contentScript.js")
-      },
-      output: {
-        entryFileNames: (chunkInfo) => {
-          if (chunkInfo.name === 'background' || chunkInfo.name === 'contentScript') {
-            return `[name].js`;
-          }
-          return `assets/[name]-[hash].js`;
-        }
-      }
-    },
-    // Kopieert de manifest en iconen naar de dist folder
-    copyPublicDir: true,
   }
 }));

@@ -2,8 +2,7 @@
 import { BelvillaData } from "@/types/belvilla";
 
 /**
- * Extracts data from a Belvilla URL using the Chrome extension API
- * or falls back to mock data if running outside of the extension context.
+ * Extracts data from a Belvilla URL using mock data since we're in a web version.
  */
 export const scrapeBelvillaData = async (url: string): Promise<BelvillaData | null> => {
   try {
@@ -12,55 +11,15 @@ export const scrapeBelvillaData = async (url: string): Promise<BelvillaData | nu
       return null;
     }
     
-    // Check if we're running in a Chrome extension context
-    if (typeof chrome !== 'undefined' && chrome.tabs && chrome.scripting) {
-      // Extract the URL's domain and path
-      const urlObj = new URL(url);
-      const domain = urlObj.hostname;
-      
-      // Find or create a tab for the URL
-      let targetTab;
-      
-      try {
-        // Try to find an existing tab with the URL
-        const tabs = await chrome.tabs.query({ url: url });
-        
-        if (tabs.length > 0) {
-          targetTab = tabs[0];
-        } else {
-          // Create a new tab if none exists
-          targetTab = await chrome.tabs.create({ url, active: false });
-          
-          // Wait a bit for the page to load
-          await new Promise(resolve => setTimeout(resolve, 3000));
-        }
-        
-        // Now, execute our content script on the tab
-        const results = await chrome.tabs.sendMessage(targetTab.id!, { action: "extractData" });
-        
-        // Close the tab if we created it
-        if (tabs.length === 0) {
-          await chrome.tabs.remove(targetTab.id!);
-        }
-        
-        return results;
-      } catch (error) {
-        console.error("Error with Chrome extension API:", error);
-        // Fall back to mock data
-        return getMockData(url);
-      }
-    } else {
-      console.warn("Chrome extension API not available, using mock data");
-      // Fall back to mock data when not running in a Chrome extension
-      return getMockData(url);
-    }
+    console.log("Web version: Using mock data instead of Chrome extension API");
+    return getMockData(url);
   } catch (error) {
     console.error("Error scraping data:", error);
     return null;
   }
 };
 
-// Mock data function - used when not in Chrome extension context
+// Mock data function
 const getMockData = (url: string): BelvillaData => {
   // Extract ID from URL
   const idMatch = url.match(/\/([0-9]+)\/?$/);
