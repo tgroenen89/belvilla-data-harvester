@@ -1,9 +1,10 @@
 
 import { Button } from "@/components/ui/button";
-import { Download, Camera } from "lucide-react";
+import { Download, Camera, FileText } from "lucide-react";
 import { BelvillaData } from "@/types/belvilla";
 import { exportToJson, exportToCsv } from "@/utils/dataExport";
 import { exportScreenshots } from "@/utils/screenshotExport";
+import { exportComparisonData } from "@/utils/comparisonExport";
 import { toast } from "sonner";
 
 interface ExportButtonsProps {
@@ -55,9 +56,21 @@ const ExportButtons = ({ data }: ExportButtonsProps) => {
       toast.error("Er is een fout opgetreden bij het exporteren van screenshots");
     }
   };
+  
+  const handleExportComparison = async () => {
+    toast.info("Bezig met genereren van vergelijkende export...");
+    
+    try {
+      await exportComparisonData(data);
+      toast.success("Vergelijkende data succesvol geëxporteerd!");
+    } catch (error) {
+      console.error("Error exporting comparison data:", error);
+      toast.error("Er is een fout opgetreden bij het exporteren van vergelijkende data");
+    }
+  };
 
   return (
-    <div className="flex gap-2">
+    <div className="flex flex-wrap gap-2">
       <Button variant="outline" onClick={handleExportCsv}>
         <Download className="h-4 w-4 mr-2" />
         Exporteer als CSV
@@ -69,6 +82,10 @@ const ExportButtons = ({ data }: ExportButtonsProps) => {
       <Button variant="outline" onClick={handleExportScreenshots}>
         <Camera className="h-4 w-4 mr-2" />
         Exporteer Screenshots
+      </Button>
+      <Button variant="outline" onClick={handleExportComparison}>
+        <FileText className="h-4 w-4 mr-2" />
+        Vergelijkende Export
       </Button>
     </div>
   );

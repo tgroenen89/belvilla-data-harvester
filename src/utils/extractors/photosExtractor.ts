@@ -14,7 +14,14 @@ export const extractPhotos = (doc: Document): string[] => {
     '.carousel img',
     '.gallery__image',
     'img[srcset]',
-    'img[data-srcset]'
+    'img[data-srcset]',
+    // Voor de Mongoolse yurt pagina
+    '.carousel__item img',
+    '.carousel-item img',
+    '.slider img',
+    '[class*="carousel"] img',
+    '[class*="slider"] img',
+    '[class*="gallery"] img'
   ];
   
   for (const selector of photoSelectors) {
@@ -56,6 +63,17 @@ export const extractPhotos = (doc: Document): string[] => {
       const src = meta.getAttribute('content');
       if (src && !photos.includes(src) && !src.includes('placeholder')) {
         photos.push(src);
+      }
+    });
+  }
+  
+  // Als nog steeds geen foto's, zoek naar achtergrondafbeeldingen in stijlattributen
+  if (photos.length === 0) {
+    doc.querySelectorAll('[style*="background"]').forEach(el => {
+      const style = el.getAttribute('style') || '';
+      const match = style.match(/url\(['"]?(https?:\/\/[^'"]+\.(?:jpg|jpeg|png|webp))['"]?\)/i);
+      if (match && match[1] && !photos.includes(match[1])) {
+        photos.push(match[1]);
       }
     });
   }

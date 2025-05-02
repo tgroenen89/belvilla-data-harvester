@@ -11,6 +11,9 @@ export const extractDescription = (doc: Document): string => {
     '.property-description',
     '.description',
     '.accommodation-description',
+    '.beschrijving',              // Nederlandse benaming
+    '[class*="beschrijving"]',    // Classes die "beschrijving" bevatten
+    '[id*="beschrijving"]',       // ID's die "beschrijving" bevatten
     '[id*="description"]'
   ];
   
@@ -20,6 +23,26 @@ export const extractDescription = (doc: Document): string => {
       description = descEl.textContent?.trim() || '';
       break;
     }
+  }
+  
+  // Als nog geen beschrijving gevonden, probeer te zoeken in de paragrafen onder een beschrijvingskop
+  if (!description) {
+    doc.querySelectorAll('h2, h3').forEach(heading => {
+      const headingText = heading.textContent?.toLowerCase() || '';
+      if (headingText.includes('beschrijving') || headingText.includes('description')) {
+        let nextEl = heading.nextElementSibling;
+        let tempDesc = '';
+        
+        while (nextEl && (nextEl.tagName === 'P' || nextEl.tagName === 'DIV')) {
+          tempDesc += (nextEl.textContent?.trim() || '') + ' ';
+          nextEl = nextEl.nextElementSibling;
+        }
+        
+        if (tempDesc) {
+          description = tempDesc.trim();
+        }
+      }
+    });
   }
   
   // If still no description, try to get it from meta tags or schema.org data

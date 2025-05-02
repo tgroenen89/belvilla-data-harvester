@@ -24,8 +24,31 @@ function extractCapacity() {
     const areaMatch = featureText.match(/(\d+[.,]?\d*)\s*m[²2]/i);
     if (areaMatch) area = parseFloat(areaMatch[1].replace(',', '.')) || 0;
     
-    const typeMatch = featureText.match(/(tent lodge|lodge|cabin|chalet|apartment|appartement|villa|cottage)/i);
+    const typeMatch = featureText.match(/(tent lodge|lodge|cabin|chalet|apartment|appartement|villa|cottage|yurt|safari tent|glamping)/i);
     if (typeMatch) accommodationType = typeMatch[1];
+  }
+  
+  // Probeer expliciet de oppervlakte te vinden - vaak aangegeven op de pagina
+  if (area === 0) {
+    // Zoek door alle elementen naar een oppervlakte indicatie
+    document.querySelectorAll('*').forEach(el => {
+      if (area > 0) return; // Stop als we al een oppervlakte hebben gevonden
+      
+      const text = el.innerText || '';
+      if (text.includes('m²') || text.includes('m2')) {
+        const areaMatch = text.match(/(\d+[.,]?\d*)\s*m[²2]/i);
+        if (areaMatch) {
+          area = parseFloat(areaMatch[1].replace(',', '.')) || 0;
+        }
+      } else if (text.match(/oppervlakte|area|grootte|superficie/i)) {
+        // Zoek naar getallen in de buurt van deze termen
+        const nearbyNumbers = text.match(/(\d+[.,]?\d*)/g);
+        if (nearbyNumbers && nearbyNumbers.length > 0) {
+          // Neem het eerste getal aan als oppervlakte
+          area = parseFloat(nearbyNumbers[0].replace(',', '.')) || 0;
+        }
+      }
+    });
   }
   
   // If not found in highlighted features, try older methods
@@ -58,12 +81,28 @@ function extractCapacity() {
           const match = text.match(/\d+[.,]?\d*/);
           if (match) area = parseFloat(match[0].replace(',', '.')) || 0;
         } else if (text.includes('type') || text.includes('accommodation') || text.includes('accommodatie') || text.includes('hébergement')) {
-          const typeMatch = text.match(/(tent lodge|lodge|cabin|chalet|apartment|appartement|villa|cottage)/i);
+          const typeMatch = text.match(/(tent lodge|lodge|cabin|chalet|apartment|appartement|villa|cottage|yurt|safari tent|glamping)/i);
           if (typeMatch) accommodationType = typeMatch[1];
         }
       });
     }
   }
+  
+  // Zoek specifiek naar oppervlakte metadata
+  const detailsLabels = document.querySelectorAll('.details-label, [class*="details"] dt, [class*="specs"] dt, [class*="specs"] th');
+  detailsLabels.forEach(label => {
+    const labelText = label.innerText.toLowerCase();
+    if (labelText.includes('oppervlakte') || labelText.includes('area') || labelText.includes('grootte') || labelText.includes('m²')) {
+      const valueEl = label.nextElementSibling || label.parentElement?.querySelector('dd, td');
+      if (valueEl) {
+        const valueText = valueEl.innerText;
+        const match = valueText.match(/(\d+[.,]?\d*)/);
+        if (match) {
+          area = parseFloat(match[1].replace(',', '.')) || 0;
+        }
+      }
+    }
+  });
   
   // Try to scan all elements with certain classes that might contain capacity info
   const possibleCapacityContainers = [
@@ -100,9 +139,27 @@ function extractCapacity() {
         }
         
         if (!accommodationType) {
-          const typeMatch = text.match(/(tent lodge|lodge|cabin|chalet|apartment|appartement|villa|cottage)/i);
+          const typeMatch = text.match(/(tent lodge|lodge|cabin|chalet|apartment|appartement|villa|cottage|yurt|safari tent|glamping)/i);
           if (typeMatch) accommodationType = typeMatch[1];
         }
+      }
+    }
+  }
+  
+  // Als oppervlakte nog steeds 0 is, probeer het uit de titel of beschrijving te halen
+  if (area === 0) {
+    const title = document.querySelector('h1')?.innerText || '';
+    const areaMatch = title.match(/(\d+[.,]?\d*)\s*m[²2]/i);
+    if (areaMatch) {
+      area = parseFloat(areaMatch[1].replace(',', '.')) || 0;
+    }
+    
+    // Probeer het uit de meta description
+    if (area === 0) {
+      const metaDescription = document.querySelector('meta[name="description"]')?.getAttribute('content') || '';
+      const metaAreaMatch = metaDescription.match(/(\d+[.,]?\d*)\s*m[²2]/i);
+      if (metaAreaMatch) {
+        area = parseFloat(metaAreaMatch[1].replace(',', '.')) || 0;
       }
     }
   }
@@ -152,6 +209,17 @@ function extractCapacity() {
       // Ignore JSON parse errors
     }
   });
+  
+  // Specifiek voor de Mongoolse yurt, als we nog geen oppervlakte hebben
+  if (area === 0 && document.documentElement.innerHTML.toLowerCase().includes('yurt')) {
+    // Yurts hebben meestal een oppervlakte tussen 30 en 50 m²
+    // Probeer het te vinden in de volledige pagina-inhoud
+    const pageContent = document.documentElement.innerText;
+    const specificAreaMatch = pageContent.match(/(3[0-9]|4[0-9]|50)\s*m[²2]/i);
+    if (specificAreaMatch) {
+      area = parseInt(specificAreaMatch[1], 10);
+    }
+  }
   
   return { persons, bedrooms, bathrooms, area, type: accommodationType };
 }
