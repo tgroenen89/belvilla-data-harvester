@@ -1,8 +1,10 @@
 
 import { Button } from "@/components/ui/button";
-import { Download } from "lucide-react";
+import { Download, Camera } from "lucide-react";
 import { BelvillaData } from "@/types/belvilla";
 import { exportToJson, exportToCsv } from "@/utils/dataExport";
+import { exportScreenshots } from "@/utils/screenshotExport";
+import { toast } from "sonner";
 
 interface ExportButtonsProps {
   data: BelvillaData[];
@@ -42,6 +44,18 @@ const ExportButtons = ({ data }: ExportButtonsProps) => {
     exportToCsv(flattenedData, `belvilla-accommodaties-${data.length}`);
   };
 
+  const handleExportScreenshots = async () => {
+    toast.info("Bezig met genereren van screenshots...");
+    
+    try {
+      await exportScreenshots(data);
+      toast.success("Screenshots succesvol geëxporteerd!");
+    } catch (error) {
+      console.error("Error exporting screenshots:", error);
+      toast.error("Er is een fout opgetreden bij het exporteren van screenshots");
+    }
+  };
+
   return (
     <div className="flex gap-2">
       <Button variant="outline" onClick={handleExportCsv}>
@@ -51,6 +65,10 @@ const ExportButtons = ({ data }: ExportButtonsProps) => {
       <Button variant="outline" onClick={handleExportJson}>
         <Download className="h-4 w-4 mr-2" />
         Exporteer als JSON
+      </Button>
+      <Button variant="outline" onClick={handleExportScreenshots}>
+        <Camera className="h-4 w-4 mr-2" />
+        Exporteer Screenshots
       </Button>
     </div>
   );
