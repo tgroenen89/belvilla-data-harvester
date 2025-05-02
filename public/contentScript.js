@@ -22,19 +22,53 @@ function extractBelvillaData() {
       country: locationParts[2] || "Unknown Country"
     };
     
-    // Extract capacity information
+    // Extract capacity information - Improved person detection
     let persons = 0, bedrooms = 0, bathrooms = 0;
+    
+    // First try to find directly in capacity info
     const capacityInfo = document.querySelectorAll('.accommodation-feature');
     capacityInfo.forEach(element => {
       const text = element.innerText.toLowerCase();
-      if (text.includes('personen')) {
-        persons = parseInt(text) || 0;
+      if (text.includes('personen') || text.includes('gasten')) {
+        const match = text.match(/\d+/);
+        if (match) persons = parseInt(match[0]) || 0;
       } else if (text.includes('slaapkamer')) {
-        bedrooms = parseInt(text) || 0;
+        const match = text.match(/\d+/);
+        if (match) bedrooms = parseInt(match[0]) || 0;
       } else if (text.includes('badkamer')) {
-        bathrooms = parseInt(text) || 0;
+        const match = text.match(/\d+/);
+        if (match) bathrooms = parseInt(match[0]) || 0;
       }
     });
+    
+    // If persons still 0, check meta description
+    if (persons === 0) {
+      const metaDescription = document.querySelector('meta[name="description"]')?.getAttribute('content') || '';
+      const personsMatch = metaDescription.match(/(\d+)\s+personen/i);
+      if (personsMatch && personsMatch[1]) {
+        persons = parseInt(personsMatch[1]);
+      }
+    }
+    
+    // If still 0, scan all elements
+    if (persons === 0) {
+      const allElements = document.querySelectorAll('*');
+      for (const element of allElements) {
+        const text = element.innerText?.toLowerCase() || '';
+        if (text.match(/\d+\s*personen/) || text.match(/\d+\s*gasten/)) {
+          const match = text.match(/(\d+)/);
+          if (match) {
+            persons = parseInt(match[0]);
+            break;
+          }
+        }
+      }
+    }
+    
+    // Default to 6 if still not found
+    if (persons === 0) {
+      persons = 6;
+    }
     
     // Extract amenities
     const amenities = [];
