@@ -21,7 +21,7 @@ const LocationTab = ({ item }: LocationTabProps) => {
           <div>
             <span className="font-medium">Plaats:</span> {item.location.city || "Geen resultaat gevonden"}
           </div>
-          {item.capacity.area && (
+          {(item.capacity.area !== undefined && item.capacity.area > 0) && (
             <div>
               <span className="font-medium">Gebied:</span> {item.capacity.area} m²
             </div>
