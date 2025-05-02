@@ -11,6 +11,8 @@ export interface BelvillaData {
     persons: number;
     bedrooms: number;
     bathrooms: number;
+    area?: number;
+    type?: string;
   };
   amenities: string[];
   description: string;

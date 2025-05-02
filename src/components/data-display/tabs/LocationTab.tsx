@@ -21,6 +21,16 @@ const LocationTab = ({ item }: LocationTabProps) => {
           <div>
             <span className="font-medium">Plaats:</span> {item.location.city || "Geen resultaat gevonden"}
           </div>
+          {item.capacity.area && (
+            <div>
+              <span className="font-medium">Gebied:</span> {item.capacity.area} m²
+            </div>
+          )}
+          {item.capacity.type && (
+            <div>
+              <span className="font-medium">Type accommodatie:</span> {item.capacity.type}
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

@@ -24,7 +24,7 @@ const OverviewTab = ({ item }: OverviewTabProps) => {
         
         <div className="mb-4">
           <h4 className="text-sm font-medium mb-1">Capaciteit</h4>
-          <div className="flex gap-4">
+          <div className="flex flex-wrap gap-4">
             <div>
               <span className="font-semibold">
                 {item.capacity.persons ? item.capacity.persons : "?"}
@@ -40,6 +40,16 @@ const OverviewTab = ({ item }: OverviewTabProps) => {
                 {item.capacity.bathrooms ? item.capacity.bathrooms : "?"}
               </span> badkamers
             </div>
+            {item.capacity.area && (
+              <div>
+                <span className="font-semibold">{item.capacity.area}</span> m²
+              </div>
+            )}
+            {item.capacity.type && (
+              <div>
+                <span className="font-semibold">Type:</span> {item.capacity.type}
+              </div>
+            )}
           </div>
           {!item.capacity.persons && !item.capacity.bedrooms && !item.capacity.bathrooms && (
             <div className="text-sm text-muted-foreground mt-1">Geen capaciteitsgegevens gevonden</div>
