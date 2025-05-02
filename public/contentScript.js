@@ -8,13 +8,13 @@ function extractBelvillaData() {
     // Extract the accommodation ID from URL
     const url = window.location.href;
     const idMatch = url.match(/\/([0-9]+)\/?$/);
-    const id = idMatch ? idMatch[1] : "unknown";
+    const id = idMatch ? idMatch[1] : "";
     
     // Extract title
-    const title = document.querySelector('h1')?.innerText || "Unknown Title";
+    const title = document.querySelector('h1')?.innerText || "";
     
     // Extract location data with improved selectors
-    let location = { city: "Unknown City", region: "Unknown Region", country: "Unknown Country" };
+    let location = { city: "", region: "", country: "" };
     
     const locationSelectors = [
       '.accommodation-header__location', 
@@ -29,15 +29,15 @@ function extractBelvillaData() {
         const locationText = locationEl.innerText.trim();
         const parts = locationText.split(',').map(part => part.trim());
         
-        if (parts.length >= 1) location.city = parts[0] || "Unknown City";
-        if (parts.length >= 2) location.region = parts[1] || "Unknown Region";
-        if (parts.length >= 3) location.country = parts[2] || "Unknown Country";
+        if (parts.length >= 1) location.city = parts[0] || "";
+        if (parts.length >= 2) location.region = parts[1] || "";
+        if (parts.length >= 3) location.country = parts[2] || "";
         break;
       }
     }
     
     // Try to extract location from meta tags if not found
-    if (location.city === "Unknown City") {
+    if (!location.city) {
       const metaTags = document.querySelectorAll('meta[property^="og:"]');
       metaTags.forEach(tag => {
         const content = tag.getAttribute('content') || '';
@@ -149,10 +149,7 @@ function extractBelvillaData() {
       }
     });
     
-    // Default values if still not found
-    persons = persons || 6;
-    bedrooms = bedrooms || 3;
-    bathrooms = bathrooms || 2;
+    // No default values if still not found
     
     // Extract amenities with improved selectors
     const amenities = [];
@@ -196,7 +193,7 @@ function extractBelvillaData() {
     if (!description) {
       description = document.querySelector('meta[name="description"]')?.getAttribute('content') || 
                    document.querySelector('meta[property="og:description"]')?.getAttribute('content') || 
-                   "No description available";
+                   "";
     }
     
     // Extract photos with improved selectors
@@ -357,9 +354,7 @@ function extractBelvillaData() {
       });
     }
     
-    // Default rating values if not found
-    score = score || 8.5;
-    count = count || 20;
+    // No default rating values
     
     // Extract rules with improved selectors
     const rules = [];

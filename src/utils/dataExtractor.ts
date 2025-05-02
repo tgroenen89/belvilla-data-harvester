@@ -9,13 +9,13 @@ export const extractDataFromHTML = (doc: Document, url: string): BelvillaData | 
   try {
     // Extract ID from URL
     const idMatch = url.match(/\/([0-9]+)\/?$/);
-    const id = idMatch ? idMatch[1] : "unknown";
+    const id = idMatch ? idMatch[1] : "";
     
     // Extract title
-    const title = doc.querySelector('h1')?.textContent || "Onbekende accommodatie";
+    const title = doc.querySelector('h1')?.textContent || "";
     
     // Extract location info with improved selectors
-    let location = { country: "Onbekend", region: "Onbekend", city: "Onbekend" };
+    let location = { country: "", region: "", city: "" };
     const locationSelectors = [
       '.accommodation-header__location',
       '.location-badge',
@@ -30,15 +30,15 @@ export const extractDataFromHTML = (doc: Document, url: string): BelvillaData | 
         const locationText = locationEl.textContent || '';
         const parts = locationText.split(',').map(p => p.trim());
         
-        if (parts.length >= 1) location.city = parts[0] || "Onbekend";
-        if (parts.length >= 2) location.region = parts[1] || "Onbekend";
-        if (parts.length >= 3) location.country = parts[2] || "Onbekend";
+        if (parts.length >= 1) location.city = parts[0] || "";
+        if (parts.length >= 2) location.region = parts[1] || "";
+        if (parts.length >= 3) location.country = parts[2] || "";
         break;
       }
     }
     
     // Try to extract location from meta tags if not found
-    if (location.city === "Onbekend") {
+    if (!location.city) {
       doc.querySelectorAll('meta[property^="og:"]').forEach(tag => {
         const content = tag.getAttribute('content') || '';
         if (tag.getAttribute('property') === 'og:locality' && content) {
@@ -154,10 +154,7 @@ export const extractDataFromHTML = (doc: Document, url: string): BelvillaData | 
       }
     }
     
-    // Set default values if still not found - these are important to display even if data can't be extracted
-    capacity.persons = capacity.persons || 6; // Default is 6 persons
-    capacity.bedrooms = capacity.bedrooms || 3; // Default is 3 bedrooms
-    capacity.bathrooms = capacity.bathrooms || 2; // Default is 2 bathrooms
+    // No default values for capacity anymore
     
     // Extract amenities with improved selectors
     const amenities: string[] = [];
@@ -197,12 +194,7 @@ export const extractDataFromHTML = (doc: Document, url: string): BelvillaData | 
       }
     }
     
-    // Default amenities if none found
-    if (amenities.length === 0) {
-      amenities.push("WiFi");
-      amenities.push("Parking");
-      amenities.push("Kitchen");
-    }
+    // No default amenities
     
     // Extract description with better selectors
     let description = "";
@@ -246,8 +238,7 @@ export const extractDataFromHTML = (doc: Document, url: string): BelvillaData | 
       }
     }
     
-    // Fallback for description
-    description = description || "Deze prachtige accommodatie biedt comfort en gemak voor een ontspannen vakantie. Geniet van de faciliteiten en de omgeving.";
+    // No fallback for description
     
     // Extract photos with improved selectors
     const photos: string[] = [];
@@ -366,8 +357,7 @@ export const extractDataFromHTML = (doc: Document, url: string): BelvillaData | 
       }
     }
     
-    // Default price if not found
-    basePrice = basePrice || 150; // Default price
+    // No default price
     
     // Extract additional costs
     const additionalCosts: { description: string; amount: string }[] = [];
@@ -472,9 +462,7 @@ export const extractDataFromHTML = (doc: Document, url: string): BelvillaData | 
       }
     }
     
-    // Default rating values if not found
-    score = score || 8.5;
-    count = count || 20;
+    // No default rating values
     
     // Extract rules
     const rules: string[] = [];
@@ -496,12 +484,7 @@ export const extractDataFromHTML = (doc: Document, url: string): BelvillaData | 
       if (rules.length > 0) break;
     }
     
-    // Default rules if none found
-    if (rules.length === 0) {
-      rules.push("Aankomst vanaf 15:00 uur");
-      rules.push("Vertrek voor 10:00 uur");
-      rules.push("Huisdieren niet toegestaan");
-    }
+    // No default rules
     
     console.log("Extracted data:", {
       id,
@@ -521,7 +504,7 @@ export const extractDataFromHTML = (doc: Document, url: string): BelvillaData | 
       capacity,
       amenities,
       description,
-      photos: photos.length > 0 ? photos : getMockPhotos(),
+      photos: photos.length > 0 ? photos : [], // No fallback to mock photos
       price: {
         basePrice,
         description: priceDescription,

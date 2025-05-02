@@ -75,11 +75,7 @@ export const scrapeBelvillaData = async (url: string): Promise<BelvillaData | nu
       return getMockData(url); // Fallback to mock data if extraction fails
     }
     
-    // Ensure data values are properly set
-    data.capacity.persons = data.capacity.persons || 6; // Ensure persons value is set
-    data.capacity.bedrooms = data.capacity.bedrooms || 3; // Ensure bedrooms value is set
-    data.capacity.bathrooms = data.capacity.bathrooms || 2; // Ensure bathrooms value is set
-    
+    // Don't set default values anymore - return the data as is
     return data;
   } catch (error) {
     console.error("Error in scraper:", error);
