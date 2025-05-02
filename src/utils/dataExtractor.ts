@@ -33,24 +33,27 @@ export const extractDataFromHTML = (doc: Document, url: string): BelvillaData | 
       bathrooms: 0
     };
     
-    // Try to find persons capacity
-    const personsEl = doc.querySelector('[data-testid="guests-count"], .accommodation-feature:contains("personen")');
+    // Try to find persons capacity - Fix the invalid :contains selector
+    const personsElements = Array.from(doc.querySelectorAll('[data-testid="guests-count"], .accommodation-feature, .feature-item'));
+    const personsEl = personsElements.find(el => el.textContent?.includes("personen"));
     if (personsEl) {
       const text = personsEl.textContent || '';
       const match = text.match(/\d+/);
       if (match) capacity.persons = parseInt(match[0]);
     }
     
-    // Try to find bedrooms
-    const bedroomsEl = doc.querySelector('[data-testid="bedrooms-count"], .accommodation-feature:contains("slaapkamer")');
+    // Try to find bedrooms - Fix the invalid :contains selector
+    const bedroomElements = Array.from(doc.querySelectorAll('[data-testid="bedrooms-count"], .accommodation-feature, .feature-item'));
+    const bedroomsEl = bedroomElements.find(el => el.textContent?.includes("slaapkamer"));
     if (bedroomsEl) {
       const text = bedroomsEl.textContent || '';
       const match = text.match(/\d+/);
       if (match) capacity.bedrooms = parseInt(match[0]);
     }
     
-    // Try to find bathrooms
-    const bathroomsEl = doc.querySelector('[data-testid="bathrooms-count"], .accommodation-feature:contains("badkamer")');
+    // Try to find bathrooms - Fix the invalid :contains selector
+    const bathroomElements = Array.from(doc.querySelectorAll('[data-testid="bathrooms-count"], .accommodation-feature, .feature-item'));
+    const bathroomsEl = bathroomElements.find(el => el.textContent?.includes("badkamer"));
     if (bathroomsEl) {
       const text = bathroomsEl.textContent || '';
       const match = text.match(/\d+/);
@@ -81,6 +84,26 @@ export const extractDataFromHTML = (doc: Document, url: string): BelvillaData | 
     const descEl = doc.querySelector('.accommodation-description__text, .description__text, [data-testid="description"]');
     if (descEl) {
       description = descEl.textContent?.trim() || '';
+    } else {
+      // Try to find description from meta tags or schema.org data
+      const metaDescription = doc.querySelector('meta[name="description"]')?.getAttribute('content');
+      if (metaDescription) {
+        description = metaDescription;
+      } else {
+        // Try to find schema.org description
+        const scripts = Array.from(doc.querySelectorAll('script[type="application/ld+json"]'));
+        for (const script of scripts) {
+          try {
+            const jsonData = JSON.parse(script.textContent || '{}');
+            if (jsonData.description) {
+              description = jsonData.description;
+              break;
+            }
+          } catch (e) {
+            // Ignore JSON parse errors
+          }
+        }
+      }
     }
     
     // Extract photos
@@ -96,6 +119,14 @@ export const extractDataFromHTML = (doc: Document, url: string): BelvillaData | 
     if (photos.length === 0) {
       doc.querySelectorAll('img[width="800"], img[width="600"], img.property-image').forEach(img => {
         const src = img.getAttribute('src');
+        if (src && !photos.includes(src) && !src.includes('placeholder')) {
+          photos.push(src);
+        }
+      });
+      
+      // Also try to find preloaded images from meta tags
+      doc.querySelectorAll('link[rel="preload"][as="image"]').forEach(link => {
+        const src = link.getAttribute('href');
         if (src && !photos.includes(src) && !src.includes('placeholder')) {
           photos.push(src);
         }
@@ -163,6 +194,15 @@ export const extractDataFromHTML = (doc: Document, url: string): BelvillaData | 
       if (text) {
         rules.push(text);
       }
+    });
+    
+    console.log("Extracted data:", {
+      id,
+      title,
+      location,
+      capacity,
+      amenities,
+      photos: photos.length
     });
     
     return {
