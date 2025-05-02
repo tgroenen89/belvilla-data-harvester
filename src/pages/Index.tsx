@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
-import DataDisplay from "@/components/DataDisplay";
+import { DataDisplay } from "@/components/data-display";
 import UrlInput from "@/components/UrlInput";
 import { scrapeBelvillaData } from "@/utils/scraper";
 import { BelvillaData } from "@/types/belvilla";
