@@ -9,23 +9,31 @@ import { scrapeBelvillaData } from "@/utils/scraper";
 import { BelvillaData } from "@/types/belvilla";
 
 const Index = () => {
-  const [data, setData] = useState<BelvillaData | null>(null);
+  const [data, setData] = useState<BelvillaData[] | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
 
-  const handleExtractData = async (url: string) => {
-    if (!url.includes("belvilla.nl")) {
+  const handleExtractData = async (urls: string[]) => {
+    if (urls.some(url => !url.includes("belvilla.nl"))) {
       toast.error("Vul een geldige Belvilla URL in");
       return;
     }
 
     setLoading(true);
     try {
-      const extractedData = await scrapeBelvillaData(url);
-      if (extractedData) {
-        setData(extractedData);
-        toast.success("Data succesvol geëxtraheerd!");
+      const results: BelvillaData[] = [];
+      
+      for (const url of urls) {
+        const extractedData = await scrapeBelvillaData(url);
+        if (extractedData) {
+          results.push(extractedData);
+        }
+      }
+      
+      if (results.length > 0) {
+        setData(results);
+        toast.success(`Data succesvol geëxtraheerd voor ${results.length} accommodatie(s)!`);
       } else {
-        toast.error("Kon geen data extraheren. Controleer of je op een accommodatiepagina van Belvilla bent.");
+        toast.error("Kon geen data extraheren. Controleer of je op accommodatiepagina's van Belvilla bent.");
       }
     } catch (error) {
       console.error("Error extracting data:", error);
@@ -50,7 +58,7 @@ const Index = () => {
         <Card className="p-6 shadow-lg bg-white dark:bg-gray-850">
           <UrlInput onExtract={handleExtractData} loading={loading} />
           
-          {data && <DataDisplay data={data} />}
+          {data && <DataDisplay data={Array.isArray(data) ? data : [data]} />}
         </Card>
 
         <footer className="mt-8 text-center text-sm text-gray-500 dark:text-gray-400">

@@ -9,44 +9,64 @@ import { Download, ChevronDown, ChevronUp } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 
 interface DataDisplayProps {
-  data: BelvillaData;
+  data: BelvillaData[];
 }
 
 const DataDisplay = ({ data }: DataDisplayProps) => {
-  const [showAllPhotos, setShowAllPhotos] = useState(false);
-  const [showAllAmenities, setShowAllAmenities] = useState(false);
-  
-  const displayedPhotos = showAllPhotos ? data.photos : data.photos.slice(0, 3);
-  const displayedAmenities = showAllAmenities ? data.amenities : data.amenities.slice(0, 6);
+  const [expandedDescriptions, setExpandedDescriptions] = useState<Record<string, boolean>>({});
+  const [expandedRules, setExpandedRules] = useState<Record<string, boolean>>({});
+  const [selectedIndex, setSelectedIndex] = useState<number>(0);
+
+  const toggleDescription = (id: string) => {
+    setExpandedDescriptions(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+  };
+
+  const toggleRules = (id: string) => {
+    setExpandedRules(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+  };
 
   const handleExportJson = () => {
-    exportToJson(data, `belvilla-${data.id}`);
+    if (data.length === 1) {
+      exportToJson(data[0], `belvilla-${data[0].id}`);
+    } else {
+      exportToJson(data, `belvilla-accommodaties-${data.length}`);
+    }
   };
   
   const handleExportCsv = () => {
-    // Convert the nested BelvillaData object to a flattened structure for CSV
-    const flattenedData = [{
-      id: data.id,
-      title: data.title,
-      country: data.location.country,
-      region: data.location.region,
-      city: data.location.city,
-      persons: data.capacity.persons,
-      bedrooms: data.capacity.bedrooms,
-      bathrooms: data.capacity.bathrooms,
-      description: data.description,
-      amenities: data.amenities.join(', '),
-      photos: data.photos.join(', '),
-      basePrice: data.price.basePrice,
-      priceDescription: data.price.description,
-      priceInfo: data.price.info,
-      ratingScore: data.rating.score,
-      ratingCount: data.rating.count,
-      rules: data.rules.join(', ')
-    }];
+    // Convert the nested BelvillaData objects to a flattened structure for CSV
+    const flattenedData = data.map(item => ({
+      id: item.id,
+      title: item.title,
+      country: item.location.country,
+      region: item.location.region,
+      city: item.location.city,
+      persons: item.capacity.persons,
+      bedrooms: item.capacity.bedrooms,
+      bathrooms: item.capacity.bathrooms,
+      description: item.description,
+      amenities: item.amenities.join(', '),
+      photos: item.photos.join(', '),
+      basePrice: item.price.basePrice,
+      priceDescription: item.price.description,
+      priceInfo: item.price.info,
+      ratingScore: item.rating.score,
+      ratingCount: item.rating.count,
+      rules: item.rules.join(', ')
+    }));
     
-    exportToCsv(flattenedData, `belvilla-${data.id}`);
+    exportToCsv(flattenedData, `belvilla-accommodaties-${data.length}`);
   };
+
+  const currentItem = data[selectedIndex];
+  const isDescriptionExpanded = expandedDescriptions[currentItem.id] || false;
+  const isRulesExpanded = expandedRules[currentItem.id] || false;
 
   return (
     <div className="mt-8">
@@ -64,176 +84,173 @@ const DataDisplay = ({ data }: DataDisplayProps) => {
         </div>
       </div>
 
-      <Tabs defaultValue="overview" className="mt-4">
-        <TabsList className="mb-4">
-          <TabsTrigger value="overview">Overzicht</TabsTrigger>
-          <TabsTrigger value="details">Details</TabsTrigger>
-          <TabsTrigger value="photos">Foto's</TabsTrigger>
-          <TabsTrigger value="prices">Prijzen</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <h3 className="font-semibold text-lg mb-2">{data.title}</h3>
-                  <p className="text-gray-500 dark:text-gray-400 mb-4">ID: {data.id}</p>
-                  
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600 dark:text-gray-400">Locatie:</span>
-                      <span>{data.location.city}, {data.location.region}, {data.location.country}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600 dark:text-gray-400">Personen:</span>
-                      <span>{data.capacity.persons}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600 dark:text-gray-400">Slaapkamers:</span>
-                      <span>{data.capacity.bedrooms}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600 dark:text-gray-400">Badkamers:</span>
-                      <span>{data.capacity.bathrooms}</span>
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  <h4 className="font-semibold mb-2">Beoordeling</h4>
-                  <div className="flex items-center mb-4">
-                    <div className="bg-blue-600 text-white font-semibold rounded-md px-2 py-1">
-                      {data.rating.score}
-                    </div>
-                    <span className="text-gray-600 dark:text-gray-400 ml-2">
-                      ({data.rating.count} beoordelingen)
-                    </span>
-                  </div>
-                  
-                  <h4 className="font-semibold mb-2">Prijs</h4>
-                  <div className="text-xl font-semibold text-green-600 dark:text-green-400">
-                    € {data.price.basePrice}
-                  </div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">
-                    {data.price.description}
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <div className="mt-4">
-            <h4 className="font-semibold mb-2">Voorzieningen</h4>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {displayedAmenities.map((amenity, index) => (
-                <div key={index} className="text-sm py-1 px-2 bg-gray-100 dark:bg-gray-800 rounded">
-                  {amenity}
-                </div>
-              ))}
-            </div>
-            {data.amenities.length > 6 && (
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => setShowAllAmenities(!showAllAmenities)}
-                className="mt-2"
-              >
-                {showAllAmenities ? (
-                  <>Minder tonen <ChevronUp className="ml-1 h-4 w-4" /></>
-                ) : (
-                  <>Alle {data.amenities.length} voorzieningen <ChevronDown className="ml-1 h-4 w-4" /></>
-                )}
-              </Button>
-            )}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="details">
-          <Card>
-            <CardContent className="pt-6 space-y-4">
-              <div>
-                <h4 className="font-semibold mb-2">Beschrijving</h4>
-                <p className="text-gray-700 dark:text-gray-300 whitespace-pre-line">
-                  {data.description}
-                </p>
-              </div>
-
-              <Separator />
-              
-              <div>
-                <h4 className="font-semibold mb-2">Regels en voorwaarden</h4>
-                <ul className="list-disc pl-5 space-y-1">
-                  {data.rules.map((rule, index) => (
-                    <li key={index} className="text-gray-700 dark:text-gray-300">
-                      {rule}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="photos">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {displayedPhotos.map((photo, index) => (
-              <div key={index} className="aspect-square relative overflow-hidden rounded-md">
-                <img 
-                  src={photo} 
-                  alt={`Afbeelding ${index + 1}`} 
-                  className="absolute inset-0 w-full h-full object-cover"
-                />
-              </div>
+      {data.length > 1 && (
+        <div className="mb-4">
+          <select 
+            value={selectedIndex}
+            onChange={(e) => setSelectedIndex(Number(e.target.value))}
+            className="w-full p-2 border rounded-md dark:bg-gray-800 dark:border-gray-700"
+          >
+            {data.map((item, index) => (
+              <option key={item.id} value={index}>
+                {item.title} - {item.location.city}, {item.location.country}
+              </option>
             ))}
-          </div>
-          {data.photos.length > 3 && (
-            <Button 
-              variant="outline" 
-              className="mt-4 mx-auto block" 
-              onClick={() => setShowAllPhotos(!showAllPhotos)}
-            >
-              {showAllPhotos ? (
-                <>Toon minder <ChevronUp className="ml-1 h-4 w-4" /></>
-              ) : (
-                <>Toon alle {data.photos.length} foto's <ChevronDown className="ml-1 h-4 w-4" /></>
-              )}
-            </Button>
-          )}
-        </TabsContent>
+          </select>
+        </div>
+      )}
 
-        <TabsContent value="prices">
+      <Tabs defaultValue="overview" className="mt-4">
+        <TabsList>
+          <TabsTrigger value="overview">Overzicht</TabsTrigger>
+          <TabsTrigger value="location">Locatie</TabsTrigger>
+          <TabsTrigger value="amenities">Voorzieningen</TabsTrigger>
+          <TabsTrigger value="price">Prijs</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="overview" className="space-y-4">
           <Card>
-            <CardContent className="pt-6 space-y-4">
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="font-semibold">Basisprijs:</span>
-                  <span className="text-xl font-bold">€ {data.price.basePrice}</span>
+            <CardContent className="pt-4">
+              <h3 className="text-lg font-semibold mb-2">{currentItem.title}</h3>
+              <div className="text-sm text-muted-foreground mb-2">ID: {currentItem.id}</div>
+              
+              <div className="mb-4">
+                <h4 className="text-sm font-medium mb-1">Capaciteit</h4>
+                <div className="flex gap-4">
+                  <div><span className="font-semibold">{currentItem.capacity.persons}</span> personen</div>
+                  <div><span className="font-semibold">{currentItem.capacity.bedrooms}</span> slaapkamers</div>
+                  <div><span className="font-semibold">{currentItem.capacity.bathrooms}</span> badkamers</div>
                 </div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {data.price.description}
-                </p>
               </div>
-
-              <Separator />
-
-              <div className="space-y-3">
-                <h4 className="font-semibold">Extra kosten:</h4>
-                {data.price.additionalCosts.map((cost, index) => (
-                  <div key={index} className="flex justify-between">
-                    <span>{cost.description}</span>
-                    <span>{cost.amount}</span>
+              
+              <div className="mb-4">
+                <h4 className="text-sm font-medium mb-1">Beschrijving</h4>
+                <div className="text-sm">
+                  {isDescriptionExpanded 
+                    ? currentItem.description 
+                    : currentItem.description.substring(0, 150) + "..."}
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => toggleDescription(currentItem.id)}
+                    className="ml-1"
+                  >
+                    {isDescriptionExpanded 
+                      ? <ChevronUp className="h-3 w-3" /> 
+                      : <ChevronDown className="h-3 w-3" />}
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="mb-4">
+                <h4 className="text-sm font-medium mb-1">Regels</h4>
+                <div className="text-sm">
+                  {isRulesExpanded 
+                    ? (
+                      <ul className="list-disc list-inside">
+                        {currentItem.rules.map((rule, i) => (
+                          <li key={i}>{rule}</li>
+                        ))}
+                      </ul>
+                    ) 
+                    : (
+                      <>
+                        {currentItem.rules.slice(0, 2).map((rule, i) => (
+                          <div key={i}>{rule}</div>
+                        ))}
+                        {currentItem.rules.length > 2 && (
+                          <div>+{currentItem.rules.length - 2} meer</div>
+                        )}
+                      </>
+                    )}
+                  {currentItem.rules.length > 2 && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => toggleRules(currentItem.id)}
+                    >
+                      {isRulesExpanded 
+                        ? <ChevronUp className="h-3 w-3" /> 
+                        : <ChevronDown className="h-3 w-3" />}
+                    </Button>
+                  )}
+                </div>
+              </div>
+              
+              <div className="mb-4">
+                <h4 className="text-sm font-medium mb-1">Beoordeling</h4>
+                <div className="flex gap-2 items-center">
+                  <div className="bg-green-100 dark:bg-green-900 px-2 py-0.5 rounded-md">
+                    <span className="font-semibold">{currentItem.rating.score}</span>/10
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    ({currentItem.rating.count} beoordelingen)
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="location">
+          <Card>
+            <CardContent className="pt-4">
+              <h3 className="font-semibold mb-4">Locatiegegevens</h3>
+              <div className="space-y-2">
+                <div><span className="font-medium">Land:</span> {currentItem.location.country}</div>
+                <div><span className="font-medium">Regio:</span> {currentItem.location.region}</div>
+                <div><span className="font-medium">Plaats:</span> {currentItem.location.city}</div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="amenities">
+          <Card>
+            <CardContent className="pt-4">
+              <h3 className="font-semibold mb-4">Voorzieningen</h3>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                {currentItem.amenities.map((amenity, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <div className="h-2 w-2 bg-primary rounded-full"></div>
+                    <span>{amenity}</span>
                   </div>
                 ))}
               </div>
-
-              <Separator />
-
-              <div>
-                <h4 className="font-semibold mb-2">Prijsinformatie</h4>
-                <p className="text-sm text-gray-700 dark:text-gray-300">
-                  {data.price.info}
-                </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="price">
+          <Card>
+            <CardContent className="pt-4">
+              <h3 className="font-semibold mb-4">Prijsinformatie</h3>
+              
+              <div className="mb-4">
+                <div className="text-2xl font-bold">€ {currentItem.price.basePrice}</div>
+                <div className="text-sm text-muted-foreground">{currentItem.price.description}</div>
               </div>
+              
+              {currentItem.price.additionalCosts && currentItem.price.additionalCosts.length > 0 && (
+                <div className="mb-4">
+                  <h4 className="text-sm font-medium mb-2">Bijkomende kosten</h4>
+                  <ul className="space-y-1">
+                    {currentItem.price.additionalCosts.map((cost, i) => (
+                      <li key={i} className="flex justify-between text-sm">
+                        <span>{cost.description}</span>
+                        <span>{cost.amount}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              
+              {currentItem.price.info && (
+                <div className="text-sm text-muted-foreground">
+                  <Separator className="my-2" />
+                  {currentItem.price.info}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
