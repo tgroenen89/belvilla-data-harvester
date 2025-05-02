@@ -11,7 +11,7 @@ export const getMockData = (url: string): BelvillaData => {
   
   return {
     id: id,
-    title: "Luxe villa met privé zwembad en panoramisch uitzicht",
+    title: "[SAMPLE DATA] Luxe villa met privé zwembad en panoramisch uitzicht",
     location: {
       country: "Frankrijk",
       region: "Provence-Alpes-Côte d'Azur",
@@ -20,7 +20,9 @@ export const getMockData = (url: string): BelvillaData => {
     capacity: {
       persons: 8,
       bedrooms: 4,
-      bathrooms: 3
+      bathrooms: 3,
+      area: 250,
+      type: "Villa"
     },
     amenities: [
       "Zwembad", 
@@ -38,7 +40,7 @@ export const getMockData = (url: string): BelvillaData => {
       "Fietsberging",
       "Buitendouche"
     ],
-    description: "Deze luxe villa ligt op een heuvel en biedt een adembenemend uitzicht op de Middellandse Zee. De woning beschikt over een privé zwembad, een ruime tuin en meerdere terrassen waar u heerlijk kunt genieten van de zon.\n\nDe villa is volledig ingericht met alle moderne gemakken en biedt plaats aan 8 personen. In de omgeving vindt u prachtige stranden, gezellige dorpjes en uitstekende restaurants.",
+    description: "[SAMPLE DATA] Deze luxe villa ligt op een heuvel en biedt een adembenemend uitzicht op de Middellandse Zee. De woning beschikt over een privé zwembad, een ruime tuin en meerdere terrassen waar u heerlijk kunt genieten van de zon.\n\nDe villa is volledig ingericht met alle moderne gemakken en biedt plaats aan 8 personen. In de omgeving vindt u prachtige stranden, gezellige dorpjes en uitstekende restaurants.",
     photos: getMockPhotos(),
     price: {
       basePrice: 2150,

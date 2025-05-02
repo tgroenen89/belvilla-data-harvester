@@ -23,15 +23,33 @@ const Index = () => {
       const results: BelvillaData[] = [];
       
       for (const url of urls) {
+        toast(`Bezig met extraheren van data voor ${url}...`, {
+          duration: 2000,
+        });
+        
         const extractedData = await scrapeBelvillaData(url);
         if (extractedData) {
+          // Controleer of het mock data is
+          const isMockData = extractedData.title.includes("[SAMPLE DATA]");
           results.push(extractedData);
+          
+          if (isMockData) {
+            toast.warning(`Kon geen echte data ophalen voor ${url}, sample data wordt weergegeven`);
+          }
         }
       }
       
       if (results.length > 0) {
         setData(results);
-        toast.success(`Data succesvol geëxtraheerd voor ${results.length} accommodatie(s)!`);
+        
+        // Controleer of het allemaal mock data is
+        const allMockData = results.every(item => item.title.includes("[SAMPLE DATA]"));
+        
+        if (allMockData) {
+          toast.warning("Alleen sample data kon worden opgehaald. Mogelijk werken de CORS-proxies niet momenteel.");
+        } else {
+          toast.success(`Data succesvol geëxtraheerd voor ${results.length} accommodatie(s)!`);
+        }
       } else {
         toast.error("Kon geen data extraheren. Controleer of je op accommodatiepagina's van Belvilla bent.");
       }
@@ -63,6 +81,7 @@ const Index = () => {
 
         <footer className="mt-8 text-center text-sm text-gray-500 dark:text-gray-400">
           <p>Deze tool is uitsluitend bedoeld voor persoonlijk gebruik en analyse.</p>
+          <p className="mt-1">Let op: Als er "SAMPLE DATA" wordt weergegeven, betekent dit dat echte data niet kon worden opgehaald.</p>
         </footer>
       </div>
       <Toaster />
