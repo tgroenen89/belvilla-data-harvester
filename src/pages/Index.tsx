@@ -18,9 +18,10 @@ const Index = () => {
   // Detect if we're running as a Chrome extension
   useEffect(() => {
     const checkIfExtension = () => {
+      // Veilige check voor Chrome API beschikbaarheid
       const isExtensionContext = typeof chrome !== 'undefined' && 
-                                 chrome.runtime && 
-                                 chrome.runtime.id;
+                               chrome?.runtime && 
+                               chrome?.runtime?.id;
       setIsExtension(!!isExtensionContext);
     };
     
